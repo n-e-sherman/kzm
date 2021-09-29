@@ -86,14 +86,9 @@ class Repository:
         self._set_io_paths()
         
     def _set_io_paths(self):
-        cwd = self.options.get('cwd','.')
-        data_dir = self.options.get('data_dir','.data/')
-        res_dir = self.options.get('res_dir','.results/')
-        log_dir = self.options.get('log_dir','.log/')
-        self.cwd = cwd
-        self.data_dir = cwd + '/' + data_dir
-        self.results_dir = cwd + '/' + res_dir
-        self.log_dir = cwd + '/' + log_dir
+        self.data_dir = self.options.get('data_dir','.data/')
+        self.results_dir = self.options.get('res_dir','.results/')
+        self.log_dir = self.options.get('log_dir','.log/')
         
 class Repository_Pickle(Repository):
     
