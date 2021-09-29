@@ -5,6 +5,12 @@ import subprocess
 import multiprocessing
 import numpy as np
 
+
+
+###########################
+########## setup ##########
+###########################
+
 cores = 1
 nodes = 1
 node = 0
@@ -16,19 +22,18 @@ if len(sys.argv) > 3:
     node = int(sys.argv[3])
 print(cores, nodes, node)
 
+folders = ['.data', '.log', '.results']
+for folder in folders:
+    if not os.path.isdir(os.getcwd() + '/' + folder):
+        os.makedirs(os.getcwd() + '/' + folder)
+
+
+
+
+# Main work
 def run(options):
     kzm = KZM(options)
     kzm.evolve()
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == '__main__':
 
