@@ -57,9 +57,6 @@ class KZM:
         M = TFIChain(model_params)
         product_state = ["up"] * M.lat.N_sites
         psi = MPS.from_product_state(M.lat.mps_sites(), product_state, bc=M.lat.bc_MPS)
-        dmrg_params = {'mixer': True, 
-                       'trunc_params': { 'chi_max': self.chi, 'svd_min': 1.e-10 } , 
-                      }
         eng = dmrg.TwoSiteDMRGEngine(psi, M, self.dmrg_options)
         self.E0, self.psi0 = eng.run()
         self.save_gs(g, J)
@@ -102,7 +99,7 @@ class KZM:
         self.write_results()
         
     def measurement(self):
-        g = 1.0 if (self.endpoint == 'critical') else 0.0
+        g = self.gc if (self.endpoint == 'critical') else 0.0
         J = 2.0 if ((self.path == 'both') and (self.endpoint == 'ising')) else 1.0
         self.get_gs(g, J)
         self.l = abs(self.psi0.overlap(self.psi))
@@ -253,8 +250,8 @@ class KZM:
         ramp = self.ramp
         endpoint = self.endpoint
         eps = make_eps(self.v, ramp)
-        gt = make_gt(self.v, eps)
-        Jt = make_Jt(self.v, eps, path)
+        gt = make_gt(self.gc, eps)
+        Jt = make_Jt(eps, path)
         self._set_times(path, ramp, endpoint)
         self._gs = gt(self._ts)
         self._Js = Jt(self._ts)
@@ -325,6 +322,7 @@ class KZM:
         self.chi = self.options.get('chi', 10)
         self.v = self.options.get('v', 0.1)
         self.gi = self.options.get('gi', 3.0)
+        self.gc = self.options.get('gc', 1.0)
         self.dt = self.options.get('dt', 0.1)
         self.path = self.options.get('path', 'both')
         self.ramp = self.options.get('ramp', 'linear')

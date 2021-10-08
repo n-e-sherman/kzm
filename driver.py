@@ -4,6 +4,7 @@ import os
 import subprocess
 import multiprocessing
 import numpy as np
+import pandas as pd
 import time
 
 
@@ -32,14 +33,15 @@ def main():
             os.makedirs(os.getcwd() + '/' + folder)
 
     options = {
-        'ramp' : 'smooth', # [linear, smooth]
-        'path' : 'g', # [both, g]
+        'ramp' : 'linear', # [linear, smooth]
+        'path' : 'both', # [both, g]
         'endpoint' : 'critical', # [critical, ising]
         'gi' : 3,
         'v' : 0.1,
         'dt' : 0.1,
         'chi': 4,
-        'evolver': 'TDVP',
+        'gc': 1.0, # This needs to be chi dependent, could hard code it in?
+        'evolver': 'TEBD',
         'repo': 'pickle',
         'load': True
     }
@@ -68,6 +70,7 @@ def main():
     options['dmrg_options'] = dmrg_options
     options['repo_options'] = repo_options
 
+    dfgc = pd.read_csv('.data/gc.csv')
     vi = 1E-5
     vf = 0.5
     Nv = 50
@@ -80,6 +83,8 @@ def main():
     for v in vs:
         for chi in chis:
             arg = options.copy()
+            gc = float(dfgc.loc[dfgc['chi'] == chi].g)
+            arg['gc'] = gc
             arg['chi'] = chi
             arg['v'] = v
             args.append(arg)

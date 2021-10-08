@@ -28,12 +28,12 @@ def make_eps(v, ramp='linear'):
             return v*t
     return eps
 
-def make_gt(v,eps):
+def make_gt(gc,eps):
     def gt(t):
-        return 1 - eps(t)
+        return gc - eps(t)*(2.0 - gc)
     return gt
 
-def make_Jt(v,eps,path):
+def make_Jt(eps,path):
     if path == "both":
         def Jt(t):
             return 1 + eps(t)
