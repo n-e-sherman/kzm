@@ -122,6 +122,7 @@ class KZM:
         df = pd.DataFrame({'t': self.ts, 'g': self.gs, 'J': self.Js, 'chi': self.chis, 'E': self.Es, 'S': self.Ss, 'E_exact': self.Es_exact})
         df['ramp'] = self.ramp
         df['path'] = self.path
+        df['chi_max'] = self.chi
         df['endpoint'] = self.endpoint
         df['v'] = self.v
         df['dt'] = self.dt

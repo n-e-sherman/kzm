@@ -70,7 +70,7 @@ def main():
     options['dmrg_options'] = dmrg_options
     options['repo_options'] = repo_options
 
-    dfgc = pd.read_csv('.data/gc.csv')
+    dfgc = pd.read_csv('gc.csv')
     vi = 1E-5
     vf = 0.5
     Nv = 50
