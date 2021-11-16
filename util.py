@@ -1,23 +1,8 @@
 import numpy as np
-import scipy as sp
-import pandas as pd
-from tenpy.models.lattice import Chain
+import tenpy.linalg.np_conserved as npc
 from tenpy.networks.mps import MPS
 from tenpy.networks.mps import TransferMatrix
-from tenpy.networks.mpo import MPO
-from tenpy.models.tf_ising import TFIChain
-from tenpy.algorithms import tebd
 from scipy.special import ellipe
-from tenpy.algorithms import dmrg
-import tenpy.linalg.np_conserved as npc
-import os
-import pickle
-import copy
-import logging
-
-from itdvp import *
-
-
 
 def make_eps(v, ramp='linear'):
     if ramp == 'smooth':
@@ -48,74 +33,31 @@ def exact_energy(J, g):
     else:
         return -g
 
-class TEBD_Evolver:
-    
-    first = True
-    def __init__(self, options):
-        self.options = options
-        
-    def evolve(self, psi, M):
-        eng = tebd.TEBDEngine(psi, M, self.options)
-        eng.run()
-        return psi
+def measure_state(psi, M):
+    E = np.mean(M.bond_energies(psi))
+    Sx = np.mean(psi.expectation_value('Sx'))
+    Sy = np.mean(psi.expectation_value('Sy'))
+    Sz = np.mean(psi.expectation_value('Sz'))
+    S = np.mean((psi.entanglement_entropy()))
+    xi = psi.correlation_length()
+    TM = TransferMatrix(psi, psi)
+    T, _ = TM.eigenvectors(num_ev=2, which='LM')
+    res_dict = {'E': [E], 'S': [S], 
+                'Sx': [Sx], 'Sy': [Sy], 'Sz': [Sz], 
+                'xi': [xi], 'T1': [abs(T[0])], 'T2': [abs(T[1])]}
+    return res_dict
 
-class TDVP_Evolver:
-    
-    first = True
-    def __init__(self, options, options_tebd, chi):
-        self.options = options
-        self.options_tebd = options_tebd
-        self.chi = chi
-        
-    def evolve(self, psi, M):
-        if np.mean(psi.chi) == self.chi:
-            if self.first:
-                print('swapping to TDVP')
-                psi = make_uniform(psi)
-                self.first = False
-            eng = iTDVPEngine(psi, M, self.options)
-        else:
-            eng = tebd.TEBDEngine(psi, M, self.options_tebd)
-        eng.run()
-        return psi
-        
-class Repository:
-    
-    def __init__(self, options):
-        self.options = options
-        self._set_io_paths()
-        
-    def _set_io_paths(self):
-        self.data_dir = self.options.get('data_dir','.data/')
-        self.results_dir = self.options.get('res_dir','.results/')
-        self.log_dir = self.options.get('log_dir','.log/')
-        
-class Repository_Pickle(Repository):
-    
-    def __init__(self, options):
-        super().__init__(options)
-        
-    def write(self, file, df):
-        df.to_csv(self.results_dir + file, index=False)
-    
-    def save(self, file, data):
-        with open(self.data_dir + file, 'wb') as f:
-            for k,v in data.items():
-                pickle.dump(v, f)
-                
-    def log(self, file, df):
-        df.to_csv(self.log_dir + file, index=False)
-        
-    def load(self, file, data):
-        if not os.path.exists(self.data_dir + file):
-            return False
-        try:
-            with open(self.data_dir + file, 'rb') as f:
-                for key in data:
-                    data[key] = pickle.load(f)
-            return True
-        except:
-            return False
+def measure_states(kzm, gs):
+    gs_dict = measure_state(gs.psi0, gs.M)
+    gs_dict.update(gs.measurement_tags())
+    kzm_dict = measure_state(kzm.psi, kzm.M)
+    kzm_dict.update(kzm.measurement_tags())
+    res_dict = kzm_dict.copy()
+    for key in gs_dict:
+        res_dict[key+'0'] = gs_dict[key]
+    res_dict['l'] = [abs(gs.psi0.overlap(kzm.psi))]
+    file = kzm.hash_kzm() + gs.hash_gs()
+    return file, res_dict
 
 class uMPS(MPS):
 

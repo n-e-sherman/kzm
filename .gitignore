@@ -2,9 +2,13 @@ __pycache__
 .data/*
 .log/*
 .results/*
+.data-*/
+.results-*/
+.log-*/
 .corr/
 corr.py
 driver-both.py
 driver-*.py
 *-old/
+old/
 

@@ -1,6 +1,4 @@
 from kzm import KZM
-from gs import GroundState
-from util import *
 import sys
 import os
 import subprocess
@@ -10,26 +8,12 @@ import pandas as pd
 import time
 
 
-
 # Main work
 def run(options):
     print(options['v'], options['chi'])
     kzm = KZM(options)
-    print('kzm built')
     kzm.evolve()
-    print('kzm evolved')
     kzm.measure()
-    print('kzm measured')
-    options.update(dict(g=kzm.g, J=kzm.J))
-    gs = GroundState(options)
-    print('gs built')
-    gs.measure()
-    print('gs measured')
-    file, res_dict = measure_states(kzm, gs)
-    print('both measured')
-    df = pd.DataFrame(res_dict)
-    kzm.repo.write('full/'+file, df)
-    print('done')
 
 def main():
 
@@ -58,9 +42,8 @@ def main():
         'dt' : 0.1,
         'gc': 1.0, # This needs to be chi dependent, could hard code it in?
         'evolver': 'TEBD',
-        'solver': 'DMRG2-bias',
         'repo': 'pickle',
-        'load': False
+        'load': True
     }
     
     tdvp_options = {
@@ -71,10 +54,6 @@ def main():
         'order': 2,
     }
 
-    dmrg_options = {
-        
-    }
-
     # '/global/cscratch1/sd/nsherman/'
     repo_options = {
         'data_dir' : os.getcwd() + '/.data/',
@@ -83,7 +62,6 @@ def main():
     }
 
     options['tdvp_options'] = tdvp_options
-    options['dmrg_options'] = dmrg_options
     options['tebd_options'] = tebd_options
     options['repo_options'] = repo_options
 
@@ -93,20 +71,27 @@ def main():
     x = np.log(vf/vi)/(Nv-1)
     vs = [vi*np.exp(n*x) for n in range(Nv)][::-1]
     chis = [2*(1+x) for x in range(10)]
-    vs = [0.5]
-    chis = [2,4,6]
+    # vs = [0.5]
+    # chis = [2,4,6]
 
+    dfgc = pd.read_csv('gc.csv')
     args = []
+    ramps = ['smooth']
     for v in vs:
         for chi in chis:
-            arg = options.copy()
-            arg['chi'] = chi
-            arg['v'] = v
-            args.append(arg)
-    # p = multiprocessing.Pool(cores)
-    # p.map(run, args[node::nodes], chunksize=1)
-    [run(arg) for arg in args[node::nodes]]
+            for ramp in ramps:
+                gc = float(dfgc.loc[(dfgc['chi'] == chi) & (dfgc['conserve'] == 'parity') & (dfgc['Q'] == 'S') & (dfgc['solver'] == 'DMRG2')].gc.unique())
+                arg = options.copy()
+                arg['gc'] = gc
+                arg['chi'] = chi
+                arg['v'] = v
+                arg['ramp'] = ramp
+                args.append(arg)
+    p = multiprocessing.Pool(cores)
+    p.map(run, args[node::nodes], chunksize=1)
+    # [run(arg) for arg in args[node::nodes]]
 
 if __name__ == '__main__':
     main()
+
 
