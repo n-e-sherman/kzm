@@ -11,4 +11,5 @@ driver-both.py
 driver-*.py
 *-old/
 old/
-
+.ipynb_checkpoints/*
+.DS_Store
